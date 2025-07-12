@@ -124,6 +124,28 @@ class TestAccountService(TestCase):
         resp = self.client.delete(f"{BASE_URL}/9999")
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
 
+    def test_list_accounts(self):
+        """It should List all Accounts"""
+        accounts = self._create_accounts(3)
+
+        resp = self.client.get(BASE_URL)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+        data = resp.get_json()
+        self.assertEqual(len(data), 3)
+
+        # Optional: verify one account is in the response
+        names = [acct["name"] for acct in data]
+        self.assertIn(accounts[0].name, names)
+
+    def test_list_no_accounts(self):
+        """It should return an empty list if no accounts exist"""
+        resp = self.client.get(BASE_URL)
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+        data = resp.get_json()
+        self.assertEqual(data, [])
+
+
 
 
 
