@@ -50,3 +50,71 @@ spec:
           rm -rf "${WORKSPACE_SOURCE_PATH}"/..?*
         fi
 
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone
+spec:
+  description: Clone a Git repo
+  params:
+    - name: url
+      type: string
+    - name: revision
+      type: string
+      default: "main"
+    - name: subdirectory
+      type: string
+      default: ""
+    - name: deleteExisting
+      type: string
+      default: "true"
+  workspaces:
+    - name: output
+  steps:
+    - name: step-clone
+      image: alpine/git:latest
+      script: |
+        #!/bin/sh
+        set -eux
+        if [ "$(params.deleteExisting)" = "true" ]; then
+          rm -rf "$(workspaces.output.path)/$(params.subdirectory)"/*
+          rm -rf "$(workspaces.output.path)/$(params.subdirectory)"/.[!.]*
+          rm -rf "$(workspaces.output.path)/$(params.subdirectory)"/..?*
+        fi
+        git clone "$(params.url)" "$(workspaces.output.path)/$(params.subdirectory)"
+        git config --global --add safe.directory "$(workspaces.output.path)/$(params.subdirectory)"
+        cd "$(workspaces.output.path)/$(params.subdirectory)"
+        git checkout "$(params.revision)"
+
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: nose
+spec:
+  description: This task will run nosetests on the provided input.
+  workspaces:
+    - name: source
+  params:
+    - name: args
+      description: Arguments to pass to nose
+      type: string
+      default: "-v"
+    - name: database_uri
+      description: Database connection string
+      type: string
+      default: "sqlite:///test.db"
+  steps:
+    - name: nosetests
+      image: python:3.9-slim
+      workingDir: $(workspaces.source.path)
+      env:
+        - name: DATABASE_URI
+          value: $(params.database_uri)
+      script: |
+        #!/bin/bash
+        set -e
+        python -m pip install --upgrade pip wheel
+        pip install -qr requirements.txt
+        nosetests $(params.args) --with-spec --spec-color
