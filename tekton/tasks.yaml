@@ -50,3 +50,40 @@ spec:
           rm -rf "${WORKSPACE_SOURCE_PATH}"/..?*
         fi
 
+---
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: git-clone
+spec:
+  description: Clone a Git repo
+  params:
+    - name: url
+      type: string
+    - name: revision
+      type: string
+      default: "main"
+    - name: subdirectory
+      type: string
+      default: ""
+    - name: deleteExisting
+      type: string
+      default: "true"
+  workspaces:
+    - name: output
+  steps:
+    - name: step-clone
+      image: alpine/git:latest
+      script: |
+        #!/bin/sh
+        set -eux
+        if [ "$(params.deleteExisting)" = "true" ]; then
+          rm -rf "$(workspaces.output.path)/$(params.subdirectory)"/*
+          rm -rf "$(workspaces.output.path)/$(params.subdirectory)"/.[!.]*
+          rm -rf "$(workspaces.output.path)/$(params.subdirectory)"/..?*
+        fi
+        git clone "$(params.url)" "$(workspaces.output.path)/$(params.subdirectory)"
+        git config --global --add safe.directory "$(workspaces.output.path)/$(params.subdirectory)"
+        cd "$(workspaces.output.path)/$(params.subdirectory)"
+        git checkout "$(params.revision)"
+
