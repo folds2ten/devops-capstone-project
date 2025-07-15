@@ -76,7 +76,7 @@ class TestAccountService(TestCase):
         new_data = {
             "name": "Updated Name",
             "email": "updated@example.com",
-            "address":"123 Updated St",
+            "address": "123 Updated St",
             "phone_number": "9876543210"
         }
 
@@ -102,7 +102,6 @@ class TestAccountService(TestCase):
             "phone_number": "9876543210"
         }
 
-
         resp = self.client.put(f"{BASE_URL}/9999", json=new_data)
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
 
@@ -118,7 +117,7 @@ class TestAccountService(TestCase):
         # Verify it's gone
         resp = self.client.get(f"{BASE_URL}/{account.id}")
         self.assertEqual(resp.status_code, status.HTTP_404_NOT_FOUND)
-    
+
     def test_delete_nonexistent_account(self):
         """It should return 204 even if Account does not exist"""
         resp = self.client.delete(f"{BASE_URL}/9999")
@@ -144,10 +143,6 @@ class TestAccountService(TestCase):
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
         data = resp.get_json()
         self.assertEqual(data, [])
-
-
-
-
 
     ######################################################################
     #  H E L P E R   M E T H O D S
